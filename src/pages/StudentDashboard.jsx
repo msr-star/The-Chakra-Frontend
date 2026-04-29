@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Activity, Clock, Zap, Target, BookOpen, CheckCircle, AlertCircle, GraduationCap, Compass, UserCheck, ExternalLink, Sparkles, Map, TrendingUp } from 'lucide-react';
 import { assessmentAPI, studentAPI } from '../api';
+import PageTransition from '../components/PageTransition';
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
@@ -10,7 +11,7 @@ const StudentDashboard = () => {
     let user = null;
     try {
         user = userStr ? JSON.parse(userStr) : null;
-    } catch (_) {
+    } catch (_e) {
         user = null;
     }
 
@@ -40,7 +41,7 @@ const StudentDashboard = () => {
                 ]);
                 if (mentorRes.data?.mentorName) setMentor(mentorRes.data);
                 setTasks(tasksRes.data || []);
-            } catch (_) { /* silent fail */ }
+            } catch (_e) { /* silent fail */ }
         };
         fetchResults();
         fetchMentorData();
@@ -70,12 +71,15 @@ const StudentDashboard = () => {
     };
 
     return (
+        <PageTransition>
         <div className="min-h-screen pt-32 pb-16 px-4 md:px-8 max-w-7xl mx-auto relative overflow-hidden text-white" style={{ background: '#120803' }}>
-            {/* Ambient Background */}
-            <motion.div
-                animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--color-accentLight)_0%,_transparent_40%)] opacity-20 blur-3xl pointer-events-none"
+            {/* Ambient Background — static gradient, GPU-composited */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: 'radial-gradient(circle at top right, rgba(255,157,0,0.12) 0%, transparent 50%)',
+                    willChange: 'transform',
+                }}
             />
 
             <motion.div
@@ -399,6 +403,7 @@ const StudentDashboard = () => {
 
             </motion.div>
         </div>
+        </PageTransition>
     );
 };
 
