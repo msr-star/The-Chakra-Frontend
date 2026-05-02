@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Phone, Lock, ArrowRight, Eye, EyeOff, Zap, ShieldAlert, CheckCircle, Loader2 } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
 import PageTransition from '../components/PageTransition';
 
 /* Left branding panel (different from login) */
@@ -135,24 +134,6 @@ const RegisterPage = () => {
             const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Please make sure email/phone are not already in use.';
             setError(`Registration failed: ${errorMsg}`);
             setMessage('');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleGoogleSuccess = async (credentialResponse) => {
-        setLoading(true);
-        try {
-            const res = await authAPI.googleLogin({ 
-                credential: credentialResponse.credential,
-                adminCode: adminCode // Pass admin code if they want to be admin via Google
-            });
-            localStorage.setItem('token', res.data.token);
-            if (res.data.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            navigate(res.data.user.role === 'ADMIN' ? '/admin' : '/student');
-        } catch (err) {
-            setError('Google authentication failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -296,23 +277,6 @@ const RegisterPage = () => {
                             <button type="submit" disabled={loading} className="btn-accent w-full justify-center text-base py-3.5 mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
                                 {loading ? <><Loader2 size={16} className="animate-spin" /> Creating account...</> : <>Create Free Account <ArrowRight size={16} /></>}
                             </button>
-                        
-                            <div className="flex items-center gap-3 my-4">
-                                <div className="flex-1 h-px bg-white/10"></div>
-                                <span className="text-xs text-gray-500 uppercase tracking-wider">or</span>
-                                <div className="flex-1 h-px bg-white/10"></div>
-                            </div>
-                            
-                            <div className="flex justify-center mt-4">
-                                <GoogleLogin 
-                                    onSuccess={handleGoogleSuccess} 
-                                    onError={() => setError('Google Login Failed')}
-                                    theme="filled_black"
-                                    size="large"
-                                    text="signup_with"
-                                    width="100%"
-                                />
-                            </div>
                         </form>
 
                         <p className="mt-8 text-center text-sm text-gray-500">

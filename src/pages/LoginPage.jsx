@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Zap, ArrowLeft, Loader2 } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
 import PageTransition from '../components/PageTransition';
 
 /* Left branding panel */
@@ -146,18 +145,6 @@ const LoginPage = () => {
         navigate(data.user.role === 'ADMIN' ? '/admin' : '/student');
     };
 
-    const handleGoogleSuccess = async (credentialResponse) => {
-        clearMsgs(); setLoading(true);
-        try {
-            const res = await authAPI.googleLogin({ credential: credentialResponse.credential });
-            completeLogin(res.data);
-        } catch (err) {
-            setError('Google authentication failed. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleForgotPassword = async (e) => {
         e.preventDefault(); clearMsgs(); setLoading(true);
         try {
@@ -284,24 +271,7 @@ const LoginPage = () => {
                                     <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
                                         {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={16} /></>}
                                     </button>
-                                
-                                <div className="flex items-center gap-3 my-4">
-                                    <div className="flex-1 h-px bg-white/10"></div>
-                                    <span className="text-xs text-gray-500 uppercase tracking-wider">or</span>
-                                    <div className="flex-1 h-px bg-white/10"></div>
-                                </div>
-                                
-                                <div className="flex justify-center mt-4">
-                                    <GoogleLogin 
-                                        onSuccess={handleGoogleSuccess} 
-                                        onError={() => setError('Google Login Failed')}
-                                        theme="filled_black"
-                                        size="large"
-                                        text="signin_with"
-                                        width="100%"
-                                    />
-                                </div>
-                            </motion.form>
+                                </motion.form>
                             )}
 
                             {view === 'ADMIN_OTP' && (
