@@ -102,6 +102,7 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [demoOtp, setDemoOtp] = useState('');
     const navigate = useNavigate();
     const clearMsgs = () => { setError(''); setMessage(''); };
 
@@ -121,20 +122,8 @@ const LoginPage = () => {
         e.preventDefault(); clearMsgs(); setLoading(true);
         try {
             const res = await authAPI.login({ identifier: email, password });
-            if (res.data.message === 'OTP_SENT') {
-                setView('ADMIN_OTP');
-                setMessage('A verification code has been sent to your email.');
-            } else { completeLogin(res.data); }
-        } catch { setError('Invalid email/phone or password. Please try again.'); }
-        finally { setLoading(false); }
-    };
-
-    const handleVerifyAdminOtp = async (e) => {
-        e.preventDefault(); clearMsgs(); setLoading(true);
-        try {
-            const res = await authAPI.verifyAdminLogin({ email, otp });
             completeLogin(res.data);
-        } catch { setError('Invalid or expired verification code.'); }
+        } catch { setError('Invalid email/phone or password. Please try again.'); }
         finally { setLoading(false); }
     };
 
@@ -148,8 +137,9 @@ const LoginPage = () => {
     const handleForgotPassword = async (e) => {
         e.preventDefault(); clearMsgs(); setLoading(true);
         try {
-            await authAPI.forgotPassword({ email });
+            const res = await authAPI.forgotPassword({ email });
             setView('RESET_PWD');
+            if (res.data.demoOtp) setDemoOtp(res.data.demoOtp);
             setMessage('Password reset code sent to your email.');
         } catch { setError('Could not send reset code. Please verify your email.'); }
         finally { setLoading(false); }
@@ -167,7 +157,6 @@ const LoginPage = () => {
 
     const viewMeta = {
         LOGIN: { title: 'Sign in', subtitle: 'Access your career assessment dashboard' },
-        ADMIN_OTP: { title: 'Admin Verification', subtitle: 'Enter the 6-digit code sent to your email' },
         FORGOT_PWD: { title: 'Reset Password', subtitle: 'Enter your email to receive a reset code' },
         RESET_PWD: { title: 'New Password', subtitle: 'Enter your reset code and new password' },
     };
@@ -274,28 +263,7 @@ const LoginPage = () => {
                                 </motion.form>
                             )}
 
-                            {view === 'ADMIN_OTP' && (
-                                <motion.form key="admin_otp"
-                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.25 }} onSubmit={handleVerifyAdminOtp} className="space-y-5">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Verification Code</label>
-                                        <div className="relative">
-                                            <ShieldCheck size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                                            <input type="text" required maxLength={6}
-                                                className="input-field pl-11 text-center tracking-[0.5em] text-xl font-bold"
-                                                placeholder="000000" value={otp} onChange={e => setOtp(e.target.value)} />
-                                        </div>
-                                    </div>
-                                    <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
-                                        {loading ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify &amp; Access Admin</>}
-                                    </button>
-                                    <button type="button" onClick={() => { setView('LOGIN'); clearMsgs(); }}
-                                        className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors">
-                                        <ArrowLeft size={14} /> Back to Login
-                                    </button>
-                                </motion.form>
-                            )}
+
 
                             {view === 'FORGOT_PWD' && (
                                 <motion.form key="forgot_pwd"
@@ -324,12 +292,35 @@ const LoginPage = () => {
                                 <motion.form key="reset_pwd"
                                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.25 }} onSubmit={handleResetPassword} className="space-y-5">
-                                    <div>
+                                    <div className="relative group">
                                         <label className="block text-sm font-medium text-gray-300 mb-2">6-Digit Reset Code</label>
                                         <input type="text" required maxLength={6}
                                             className="input-field text-center tracking-[0.5em] text-xl font-bold"
                                             placeholder="000000" value={otp} onChange={e => setOtp(e.target.value)} />
+                                        
+                                        {/* Demo OTP Display */}
+                                        <AnimatePresence>
+                                            {demoOtp && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                                    className="absolute -right-4 top-1/2 -translate-y-1/2 translate-x-full hidden lg:block"
+                                                >
+                                                    <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl p-3 backdrop-blur-md">
+                                                        <p className="text-[10px] text-[#FF5A00] uppercase tracking-widest font-bold mb-1">System Recovery Token</p>
+                                                        <p className="text-xl font-mono font-black text-white tracking-[0.2em]">{demoOtp}</p>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
+                                    
+                                    {/* Mobile Demo OTP Display */}
+                                    {demoOtp && (
+                                        <div className="lg:hidden mt-2 p-3 bg-[#FF5A00]/10 border border-[#FF5A00]/20 rounded-xl text-center">
+                                            <p className="text-[10px] text-[#FF5A00] uppercase tracking-widest font-bold">System Recovery Token: <span className="text-white text-lg ml-2 tracking-widest">{demoOtp}</span></p>
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
                                         <div className="relative">

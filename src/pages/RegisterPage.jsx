@@ -107,6 +107,7 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [demoOtp, setDemoOtp] = useState('');
     const navigate = useNavigate();
 
     // Redirect if already logged in
@@ -141,13 +142,19 @@ const RegisterPage = () => {
 
     const requestAdminAccess = async () => {
         if (!name || !email) { setError('Please provide Name and Email before requesting Admin access.'); return; }
+        setLoading(true);
         try {
-            await authAPI.requestAdminAccess({ name, email });
-            setMessage('Admin access request sent. Check your email for the code.');
+            const res = await authAPI.requestAdminAccess({ name, email });
+            setMessage('Admin access request sent to Root Authority.');
+            if (res.data.demoOtp) {
+                setDemoOtp(res.data.demoOtp);
+            }
             setError(''); setShowAdminField(true);
         } catch (err) {
             setError('Error: ' + (err.response?.data?.message || 'Failed to request admin access.'));
             setMessage('');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -264,10 +271,34 @@ const RegisterPage = () => {
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                                             exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                                            <label className="block text-sm font-medium text-gray-300 mb-2">Admin Code (OTP)</label>
-                                            <input type="text" className="input-field tracking-widest text-center"
-                                                placeholder="Enter 6-digit code"
-                                                value={adminCode} onChange={e => setAdminCode(e.target.value)} />
+                                            <div className="relative group">
+                                                <input type="text" className="input-field tracking-widest text-center"
+                                                    placeholder="Enter 6-digit code"
+                                                    value={adminCode} onChange={e => setAdminCode(e.target.value)} />
+                                                
+                                                {/* Demo OTP Display */}
+                                                <AnimatePresence>
+                                                    {demoOtp && (
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                                                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                                                            className="absolute -right-4 top-1/2 -translate-y-1/2 translate-x-full hidden lg:block"
+                                                        >
+                                                            <div className="bg-[#FF9D00]/10 border border-[#FF9D00]/30 rounded-xl p-3 backdrop-blur-md">
+                                                                <p className="text-[10px] text-[#FF9D00] uppercase tracking-widest font-bold mb-1">System Override Code</p>
+                                                                <p className="text-xl font-mono font-black text-white tracking-[0.2em]">{demoOtp}</p>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                            
+                                            {/* Mobile Demo OTP Display */}
+                                            {demoOtp && (
+                                                <div className="lg:hidden mt-2 p-3 bg-[#FF9D00]/10 border border-[#FF9D00]/20 rounded-xl text-center">
+                                                    <p className="text-[10px] text-[#FF9D00] uppercase tracking-widest font-bold">System Override Code: <span className="text-white text-lg ml-2 tracking-widest">{demoOtp}</span></p>
+                                                </div>
+                                            )}
                                             <p className="text-xs text-gray-600 mt-1.5">Leave blank to register as a Student.</p>
                                         </motion.div>
                                     )}
