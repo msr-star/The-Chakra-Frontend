@@ -96,6 +96,7 @@ api.interceptors.response.use(
 
 export const authAPI = {
     login: (data) => api.post('/auth/login', data),
+    googleLogin: (data) => api.post('/auth/google', data),
     register: (data) => api.post('/auth/register', data),
     verifyAdminLogin: (data) => api.post('/auth/verify-admin-login', data),
     requestAdminAccess: (data) => api.post('/auth/request-admin-access', data),

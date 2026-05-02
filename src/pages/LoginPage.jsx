@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Zap, ArrowLeft, Loader2 } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import PageTransition from '../components/PageTransition';
 
 /* Left branding panel */
@@ -145,6 +146,18 @@ const LoginPage = () => {
         navigate(data.user.role === 'ADMIN' ? '/admin' : '/student');
     };
 
+    const handleGoogleSuccess = async (credentialResponse) => {
+        clearMsgs(); setLoading(true);
+        try {
+            const res = await authAPI.googleLogin({ credential: credentialResponse.credential });
+            completeLogin(res.data);
+        } catch (err) {
+            setError('Google authentication failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleForgotPassword = async (e) => {
         e.preventDefault(); clearMsgs(); setLoading(true);
         try {
@@ -174,188 +187,205 @@ const LoginPage = () => {
 
     return (
         <PageTransition>
-        <div className="min-h-screen flex pt-28"
-            style={{ background: '#120803' }}>
+            <div className="min-h-screen flex pt-28"
+                style={{ background: '#120803' }}>
 
-            {/* Left brand panel (takes 45% on desktop) */}
-            <div className="lg:w-[45%] lg:min-h-screen">
-                <BrandPanel />
-            </div>
+                {/* Left brand panel (takes 45% on desktop) */}
+                <div className="lg:w-[45%] lg:min-h-screen">
+                    <BrandPanel />
+                </div>
 
-            {/* Right form panel */}
-            <div className="flex-1 flex items-center justify-center px-6 py-20 relative overflow-hidden">
-                {/* Ambient glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none"
-                    style={{ background: 'radial-gradient(circle, rgba(255,90,0,0.08) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+                {/* Right form panel */}
+                <div className="flex-1 flex items-center justify-center px-6 py-20 relative overflow-hidden">
+                    {/* Ambient glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none"
+                        style={{ background: 'radial-gradient(circle, rgba(255,90,0,0.08) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-full max-w-md relative z-10"
-                >
-                    {/* Mobile logo */}
-                    <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                            style={{ background: 'linear-gradient(135deg, #FF5A00, #FF9D00)' }}>
-                            <Zap size={15} fill="white" className="text-white" />
-                        </div>
-                        <span className="font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>The Chakra</span>
-                    </Link>
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        className="w-full max-w-md relative z-10"
+                    >
+                        {/* Mobile logo */}
+                        <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden">
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                                style={{ background: 'linear-gradient(135deg, #FF5A00, #FF9D00)' }}>
+                                <Zap size={15} fill="white" className="text-white" />
+                            </div>
+                            <span className="font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>The Chakra</span>
+                        </Link>
 
-                    {/* Heading */}
-                    <AnimatePresence mode="wait">
-                        <motion.div key={view}
-                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.25 }} className="mb-8">
-                            <h1 className="text-3xl font-black text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                                {viewMeta[view].title}
-                            </h1>
-                            <p className="text-gray-400 text-sm">{viewMeta[view].subtitle}</p>
-                        </motion.div>
-                    </AnimatePresence>
-
-                    {/* Messages */}
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                                className="mb-5 px-4 py-3 rounded-xl text-sm text-red-300 font-medium"
-                                style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)' }}>
-                                {error}
+                        {/* Heading */}
+                        <AnimatePresence mode="wait">
+                            <motion.div key={view}
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.25 }} className="mb-8">
+                                <h1 className="text-3xl font-black text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                                    {viewMeta[view].title}
+                                </h1>
+                                <p className="text-gray-400 text-sm">{viewMeta[view].subtitle}</p>
                             </motion.div>
-                        )}
-                        {message && (
-                            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                                className="mb-5 px-4 py-3 rounded-xl text-sm text-emerald-300 font-medium"
-                                style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
-                                {message}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                        </AnimatePresence>
 
-                    {/* Forms */}
-                    <AnimatePresence mode="wait">
-                        {view === 'LOGIN' && (
-                            <motion.form key="login"
-                                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.25 }} onSubmit={handleStandardLogin} className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Email or Phone</label>
-                                    <div className="relative">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                                        <input type="text" required className="input-field pl-11"
-                                            value={email} onChange={e => setEmail(e.target.value)} />
+                        {/* Messages */}
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                    className="mb-5 px-4 py-3 rounded-xl text-sm text-red-300 font-medium"
+                                    style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)' }}>
+                                    {error}
+                                </motion.div>
+                            )}
+                            {message && (
+                                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                    className="mb-5 px-4 py-3 rounded-xl text-sm text-emerald-300 font-medium"
+                                    style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                    {message}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Forms */}
+                        <AnimatePresence mode="wait">
+                            {view === 'LOGIN' && (
+                                <motion.form key="login"
+                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.25 }} onSubmit={handleStandardLogin} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Email or Phone</label>
+                                        <div className="relative">
+                                            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                                            <input type="text" required className="input-field pl-11"
+                                                value={email} onChange={e => setEmail(e.target.value)} />
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                                    <div className="relative">
-                                        <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                                        <input type={showPwd ? 'text' : 'password'} required
-                                            className="input-field pl-11 pr-12"
-                                            value={password} onChange={e => setPassword(e.target.value)} />
-                                        <button type="button"
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                                            onClick={() => setShowPwd(!showPwd)}>
-                                            {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                                        <div className="relative">
+                                            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                                            <input type={showPwd ? 'text' : 'password'} required
+                                                className="input-field pl-11 pr-12"
+                                                value={password} onChange={e => setPassword(e.target.value)} />
+                                            <button type="button"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                                                onClick={() => setShowPwd(!showPwd)}>
+                                                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button type="button" onClick={() => { setView('FORGOT_PWD'); clearMsgs(); }}
+                                            className="text-xs font-semibold transition-colors"
+                                            style={{ color: '#FF5A00' }}>
+                                            Forgot password?
                                         </button>
                                     </div>
-                                </div>
-                                <div className="flex justify-end">
-                                    <button type="button" onClick={() => { setView('FORGOT_PWD'); clearMsgs(); }}
-                                        className="text-xs font-semibold transition-colors"
-                                        style={{ color: '#FF5A00' }}>
-                                        Forgot password?
+                                    <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={16} /></>}
                                     </button>
+                                
+                                <div className="flex items-center gap-3 my-4">
+                                    <div className="flex-1 h-px bg-white/10"></div>
+                                    <span className="text-xs text-gray-500 uppercase tracking-wider">or</span>
+                                    <div className="flex-1 h-px bg-white/10"></div>
                                 </div>
-                                <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                                    {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={16} /></>}
-                                </button>
+                                
+                                <div className="flex justify-center mt-4">
+                                    <GoogleLogin 
+                                        onSuccess={handleGoogleSuccess} 
+                                        onError={() => setError('Google Login Failed')}
+                                        theme="filled_black"
+                                        size="large"
+                                        text="signin_with"
+                                        width="100%"
+                                    />
+                                </div>
                             </motion.form>
-                        )}
+                            )}
 
-                        {view === 'ADMIN_OTP' && (
-                            <motion.form key="admin_otp"
-                                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.25 }} onSubmit={handleVerifyAdminOtp} className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Verification Code</label>
-                                    <div className="relative">
-                                        <ShieldCheck size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                            {view === 'ADMIN_OTP' && (
+                                <motion.form key="admin_otp"
+                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.25 }} onSubmit={handleVerifyAdminOtp} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Verification Code</label>
+                                        <div className="relative">
+                                            <ShieldCheck size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                                            <input type="text" required maxLength={6}
+                                                className="input-field pl-11 text-center tracking-[0.5em] text-xl font-bold"
+                                                placeholder="000000" value={otp} onChange={e => setOtp(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        {loading ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify &amp; Access Admin</>}
+                                    </button>
+                                    <button type="button" onClick={() => { setView('LOGIN'); clearMsgs(); }}
+                                        className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                                        <ArrowLeft size={14} /> Back to Login
+                                    </button>
+                                </motion.form>
+                            )}
+
+                            {view === 'FORGOT_PWD' && (
+                                <motion.form key="forgot_pwd"
+                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.25 }} onSubmit={handleForgotPassword} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+                                        <div className="relative">
+                                            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                                            <input type="email" required className="input-field pl-11"
+                                                placeholder="you@example.com"
+                                                value={email} onChange={e => setEmail(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        {loading ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : <>Send Reset Code <ArrowRight size={16} /></>}
+                                    </button>
+                                    <button type="button" onClick={() => { setView('LOGIN'); clearMsgs(); }}
+                                        className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                                        <ArrowLeft size={14} /> Back to Login
+                                    </button>
+                                </motion.form>
+                            )}
+
+                            {view === 'RESET_PWD' && (
+                                <motion.form key="reset_pwd"
+                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.25 }} onSubmit={handleResetPassword} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">6-Digit Reset Code</label>
                                         <input type="text" required maxLength={6}
-                                            className="input-field pl-11 text-center tracking-[0.5em] text-xl font-bold"
+                                            className="input-field text-center tracking-[0.5em] text-xl font-bold"
                                             placeholder="000000" value={otp} onChange={e => setOtp(e.target.value)} />
                                     </div>
-                                </div>
-                                <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
-                                    {loading ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify &amp; Access Admin</>}
-                                </button>
-                                <button type="button" onClick={() => { setView('LOGIN'); clearMsgs(); }}
-                                    className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors">
-                                    <ArrowLeft size={14} /> Back to Login
-                                </button>
-                            </motion.form>
-                        )}
-
-                        {view === 'FORGOT_PWD' && (
-                            <motion.form key="forgot_pwd"
-                                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.25 }} onSubmit={handleForgotPassword} className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-                                    <div className="relative">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                                        <input type="email" required className="input-field pl-11"
-                                            placeholder="you@example.com"
-                                            value={email} onChange={e => setEmail(e.target.value)} />
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+                                        <div className="relative">
+                                            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                                            <input type="password" required className="input-field pl-11"
+                                                placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                                        </div>
                                     </div>
-                                </div>
-                                <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
-                                    {loading ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : <>Send Reset Code <ArrowRight size={16} /></>}
-                                </button>
-                                <button type="button" onClick={() => { setView('LOGIN'); clearMsgs(); }}
-                                    className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors">
-                                    <ArrowLeft size={14} /> Back to Login
-                                </button>
-                            </motion.form>
-                        )}
+                                    <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        {loading ? <><Loader2 size={16} className="animate-spin" /> Resetting...</> : <>Reset Password <ArrowRight size={16} /></>}
+                                    </button>
+                                </motion.form>
+                            )}
+                        </AnimatePresence>
 
-                        {view === 'RESET_PWD' && (
-                            <motion.form key="reset_pwd"
-                                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.25 }} onSubmit={handleResetPassword} className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">6-Digit Reset Code</label>
-                                    <input type="text" required maxLength={6}
-                                        className="input-field text-center tracking-[0.5em] text-xl font-bold"
-                                        placeholder="000000" value={otp} onChange={e => setOtp(e.target.value)} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
-                                    <div className="relative">
-                                        <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                                        <input type="password" required className="input-field pl-11"
-                                            placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                                    </div>
-                                </div>
-                                <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base py-3.5 disabled:opacity-60 disabled:cursor-not-allowed">
-                                    {loading ? <><Loader2 size={16} className="animate-spin" /> Resetting...</> : <>Reset Password <ArrowRight size={16} /></>}
-                                </button>
-                            </motion.form>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Footer link */}
-                    <p className="mt-8 text-center text-sm text-gray-500">
-                        Don&rsquo;t have an account?{' '}
-                        <Link to="/register" className="font-semibold transition-colors hover:opacity-80"
-                            style={{ color: '#FF5A00' }}>
-                            Create one free
-                        </Link>
-                    </p>
-                </motion.div>
+                        {/* Footer link */}
+                        <p className="mt-8 text-center text-sm text-gray-500">
+                            Don&rsquo;t have an account?{' '}
+                            <Link to="/register" className="font-semibold transition-colors hover:opacity-80"
+                                style={{ color: '#FF5A00' }}>
+                                Create one free
+                            </Link>
+                        </p>
+                    </motion.div>
+                </div>
             </div>
-        </div>
         </PageTransition>
     );
 };
